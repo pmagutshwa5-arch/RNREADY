@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RNReady — NCLEX Clinical Tutor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--teal:#0d9488;--teal-light:#ccfbf1;--teal-dark:#0f766e;--ink:#0f2027;--slate:#334155;--mist:#f0fdfa;--bone:#fafaf9;--warn:#f59e0b;--red:#ef4444;--green:#10b981;--card:#fff;--border:#e2e8f0;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bone);color:var(--ink);}
+
+/* NAV */
+nav{background:var(--ink);color:#fff;padding:0 1.25rem;height:56px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--teal);position:sticky;top:0;z-index:200;}
+.nav-logo{font-family:'Lora',serif;font-size:1.15rem;display:flex;align-items:center;gap:.4rem;flex-shrink:0;}
+.nav-logo .dot{color:var(--warn);font-size:1.4rem;line-height:1;}
+.nav-tabs{display:flex;gap:.2rem;}
+.nav-tab{padding:.38rem .85rem;border-radius:7px;font-size:.78rem;font-weight:500;cursor:pointer;border:none;background:transparent;color:#94a3b8;transition:all .2s;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.nav-tab:hover{background:rgba(255,255,255,.1);color:#fff;}
+.nav-tab.active{background:var(--teal);color:#fff;}
+.nav-right{display:flex;align-items:center;gap:.6rem;flex-shrink:0;}
+.nav-user{font-size:.72rem;color:#64748b;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nav-plan{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:999px;}
+.plan-pro{background:var(--warn);color:var(--ink);}
+.plan-free{background:#475569;color:#cbd5e1;}
+.btn-out{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:6px;padding:.28rem .65rem;font-size:.7rem;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .2s;}
+.btn-out:hover{background:rgba(255,255,255,.18);}
+
+/* SCREENS */
+.screen{display:none;height:calc(100dvh - 56px);flex-direction:column;overflow:hidden;}
+.screen.active{display:flex;}
+.screen-full{display:none;min-height:calc(100dvh - 56px);}
+.screen-full.active{display:flex;}
+
+/* AUTH */
+.auth-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--ink) 0%,#1e3a3a 100%);padding:1.5rem;}
+.auth-card{background:#fff;border-radius:18px;padding:2.25rem 1.75rem;width:100%;max-width:400px;box-shadow:0 20px 50px rgba(0,0,0,.3);}
+.auth-logo{font-family:'Lora',serif;font-size:1.5rem;color:var(--ink);display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem;}
+.auth-logo .dot{color:var(--warn);font-size:1.8rem;line-height:1;}
+.auth-sub{font-size:.8rem;color:#64748b;margin-bottom:1.75rem;}
+.auth-card h2{font-size:1.1rem;font-weight:600;margin-bottom:1.1rem;color:var(--ink);}
+.fg{margin-bottom:.9rem;}
+.fg label{display:block;font-size:.78rem;font-weight:500;color:var(--slate);margin-bottom:.3rem;}
+.fg input{width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:.6rem .85rem;font-size:.85rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;color:var(--ink);}
+.fg input:focus{border-color:var(--teal);}
+.btn-auth{width:100%;background:var(--teal);color:#fff;border:none;border-radius:9px;padding:.7rem;font-size:.88rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .2s;margin-top:.4rem;}
+.btn-auth:hover{background:var(--teal-dark);}
+.btn-auth:disabled{background:#94a3b8;cursor:not-allowed;}
+.auth-div{border:none;border-top:1px solid #e2e8f0;margin:1.1rem 0;}
+.auth-switch{text-align:center;font-size:.8rem;color:#64748b;}
+.auth-switch a{color:var(--teal);cursor:pointer;font-weight:500;}
+.auth-err{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:7px;padding:.55rem .85rem;font-size:.78rem;margin-bottom:.85rem;display:none;}
+.auth-ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:7px;padding:.55rem .85rem;font-size:.78rem;margin-bottom:.85rem;display:none;}
+
+/* PRICING */
+.pricing-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--ink) 0%,#1e3a3a 100%);padding:2rem 1.5rem;flex-direction:column;gap:1.75rem;}
+.pricing-head{text-align:center;color:#fff;}
+.pricing-head h1{font-family:'Lora',serif;font-size:1.6rem;margin-bottom:.3rem;}
+.pricing-head p{color:#94a3b8;font-size:.85rem;}
+.pricing-cards{display:flex;gap:1.1rem;flex-wrap:wrap;justify-content:center;max-width:640px;width:100%;}
+.pc{background:#fff;border-radius:18px;padding:1.75rem 1.5rem;flex:1;min-width:240px;max-width:280px;position:relative;}
+.pc.feat{background:var(--teal-dark);color:#fff;transform:scale(1.02);box-shadow:0 18px 45px rgba(13,148,136,.35);}
+.pop-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--warn);color:var(--ink);font-size:.64rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 12px;border-radius:999px;}
+.plan-nm{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.4rem;opacity:.7;}
+.plan-pr{font-family:'Lora',serif;font-size:2.5rem;font-weight:600;line-height:1;margin-bottom:.25rem;}
+.plan-pr span{font-size:.9rem;font-weight:400;opacity:.7;}
+.plan-ds{font-size:.78rem;opacity:.75;margin-bottom:1.1rem;}
+.plan-fs{list-style:none;margin-bottom:1.25rem;display:flex;flex-direction:column;gap:.4rem;}
+.plan-fs li{font-size:.8rem;display:flex;align-items:flex-start;gap:.4rem;}
+.plan-fs li::before{content:"✓";font-weight:700;flex-shrink:0;}
+.pc.feat .plan-fs li::before{color:var(--warn);}
+.pc:not(.feat) .plan-fs li::before{color:var(--teal);}
+.btn-plan{width:100%;padding:.65rem;border-radius:9px;font-size:.85rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:all .2s;}
+.btn-outline{background:transparent;border:2px solid #e2e8f0;color:var(--slate);}
+.btn-outline:hover{border-color:var(--teal);color:var(--teal);}
+.btn-solid{background:#fff;color:var(--teal-dark);}
+.btn-solid:hover{background:var(--teal-light);}
+.pricing-foot{color:#64748b;font-size:.75rem;text-align:center;}
+.pricing-foot a{color:var(--teal-light);cursor:pointer;text-decoration:underline;}
+
+/* TUTOR */
+.tutor-layout{display:flex;flex:1;overflow:hidden;}
+aside{width:220px;background:#1e293b;color:#cbd5e1;display:flex;flex-direction:column;padding:1rem .85rem;gap:.35rem;flex-shrink:0;overflow-y:auto;}
+aside h3{font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#475569;padding:.5rem .5rem .2rem;margin-top:.4rem;}
+.sb{display:flex;align-items:center;gap:.55rem;padding:.5rem .65rem;border-radius:7px;cursor:pointer;font-size:.8rem;font-weight:400;transition:background .15s;border:none;background:transparent;color:#cbd5e1;width:100%;text-align:left;}
+.sb:hover{background:#334155;color:#fff;}
+.sb.active{background:#0f766e;color:#fff;}
+.sb-ic{font-size:.95rem;width:16px;text-align:center;}
+.chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topic-bar{background:var(--mist);border-bottom:1px solid #d1fae5;padding:.5rem 1.25rem;font-size:.75rem;color:var(--teal-dark);font-weight:500;display:flex;align-items:center;gap:.4rem;flex-shrink:0;}
+.topic-chip{background:#fff;border:1px solid #99f6e4;padding:1px 9px;border-radius:999px;font-size:.7rem;font-weight:600;color:var(--teal-dark);}
+#messages{flex:1;overflow-y:auto;padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1rem;scroll-behavior:smooth;}
+.msg-row{display:flex;gap:.65rem;animation:fadeUp .3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}
+.msg-row.user{flex-direction:row-reverse;}
+.av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.av.ai{background:var(--ink);color:var(--warn);font-family:'Lora',serif;font-style:italic;font-size:.9rem;}
+.av.user{background:var(--teal);color:#fff;font-size:.7rem;}
+.bubble{max-width:74%;padding:.75rem 1rem;border-radius:14px;font-size:.85rem;line-height:1.65;}
+.bubble.ai{background:#fff;border:1px solid #e2e8f0;border-top-left-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.06);color:var(--slate);}
+.bubble.user{background:var(--teal-dark);color:#fff;border-top-right-radius:3px;}
+.bubble.ai strong{color:var(--ink);}
+.bubble.ai em{color:var(--teal-dark);font-style:italic;}
+.bubble.ai ul,.bubble.ai ol{padding-left:1.1rem;margin:.3rem 0;}
+.bubble.ai li{margin-bottom:.2rem;}
+.nclex-tag{display:inline-block;background:var(--teal-light);color:var(--teal-dark);font-size:.65rem;font-weight:600;padding:1px 6px;border-radius:999px;letter-spacing:.06em;margin-right:3px;}
+.dots span{display:inline-block;width:5px;height:5px;background:#94a3b8;border-radius:50%;margin:0 2px;animation:bounce 1.2s infinite;}
+.dots span:nth-child(2){animation-delay:.2s;}
+.dots span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);}40%{transform:translateY(-5px);}}
+.input-area{border-top:1px solid #e2e8f0;background:#fff;padding:.75rem 1.25rem .85rem;display:flex;gap:.65rem;align-items:flex-end;flex-shrink:0;}
+#userInput{flex:1;border:1.5px solid #cbd5e1;border-radius:10px;padding:.6rem .9rem;font-size:.85rem;font-family:'DM Sans',sans-serif;color:var(--ink);resize:none;max-height:120px;min-height:42px;outline:none;transition:border-color .2s;line-height:1.5;}
+#userInput:focus{border-color:var(--teal);}
+#userInput::placeholder{color:#94a3b8;}
+#sendBtn{background:var(--teal);color:#fff;border:none;border-radius:10px;width:42px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .1s;flex-shrink:0;}
+#sendBtn:hover{background:var(--teal-dark);}
+#sendBtn:active{transform:scale(.95);}
+#sendBtn:disabled{background:#94a3b8;cursor:not-allowed;}
+.hint{font-size:.68rem;color:#94a3b8;padding:0 .2rem .1rem;white-space:nowrap;}
+#emptyState{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:.85rem;text-align:center;padding:1.5rem;color:#64748b;}
+#emptyState .big-icon{font-size:2.8rem;}
+#emptyState h2{font-family:'Lora',serif;font-size:1.3rem;color:var(--ink);}
+#emptyState p{font-size:.85rem;max-width:360px;line-height:1.6;}
+.starter-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-top:.35rem;max-width:460px;width:100%;}
+.starter-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:.75rem .9rem;font-size:.78rem;cursor:pointer;text-align:left;color:var(--slate);transition:border-color .2s,box-shadow .2s;line-height:1.5;}
+.starter-card:hover{border-color:var(--teal);box-shadow:0 2px 8px rgba(13,148,136,.1);}
+.starter-card strong{display:block;color:var(--teal-dark);margin-bottom:2px;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;}
+.limit-banner{background:linear-gradient(135deg,#fef3c7,#fde68a);border-top:2px solid var(--warn);padding:.65rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-shrink:0;}
+.limit-banner p{font-size:.8rem;color:#92400e;font-weight:500;}
+.btn-upgrade{background:var(--warn);color:var(--ink);border:none;border-radius:7px;padding:.38rem .9rem;font-size:.78rem;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;}
+
+/* DASHBOARD */
+.dash-scroll{flex:1;overflow-y:auto;padding:1.75rem 1.5rem;}
+.dash-h{margin-bottom:1.5rem;}
+.dash-h h1{font-family:'Lora',serif;font-size:1.75rem;margin-bottom:.2rem;}
+.dash-h p{color:#64748b;font-size:.85rem;}
+.ready-card{background:var(--ink);border-radius:18px;padding:1.75rem;color:#fff;margin-bottom:1.25rem;display:flex;align-items:center;gap:1.75rem;flex-wrap:wrap;}
+.ring-wrap{position:relative;width:130px;height:130px;flex-shrink:0;}
+.ring-wrap svg{transform:rotate(-90deg);}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.1);stroke-width:9;}
+.ring-fill{fill:none;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset 1.2s ease;}
+.ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-pct{font-family:'Lora',serif;font-size:2rem;font-weight:600;line-height:1;}
+.ring-lbl{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin-top:2px;}
+.ready-info h2{font-family:'Lora',serif;font-size:1.3rem;margin-bottom:.35rem;}
+.ready-info p{color:#94a3b8;font-size:.82rem;max-width:340px;line-height:1.6;}
+.r-badge{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .9rem;border-radius:999px;font-size:.74rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:.65rem;}
+.r-no{background:rgba(239,68,68,.2);color:#fca5a5;}
+.r-mid{background:rgba(245,158,11,.2);color:#fcd34d;}
+.r-yes{background:rgba(16,185,129,.2);color:#6ee7b7;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.85rem;margin-bottom:1.25rem;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem .9rem;text-align:center;}
+.stat-num{font-family:'Lora',serif;font-size:1.8rem;font-weight:600;color:var(--teal-dark);}
+.stat-lbl{font-size:.72rem;color:#64748b;margin-top:.15rem;}
+.sec-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem;}
+.sec-card h3{font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#64748b;margin-bottom:1rem;}
+.t-row{display:flex;align-items:center;gap:.85rem;margin-bottom:.75rem;}
+.t-row:last-child{margin-bottom:0;}
+.t-name{font-size:.8rem;color:var(--slate);width:150px;flex-shrink:0;}
+.bar-wrap{flex:1;background:#f1f5f9;border-radius:999px;height:7px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:999px;transition:width .8s ease;background:var(--teal);}
+.bar-fill.weak{background:var(--red);}
+.bar-fill.mid{background:var(--warn);}
+.t-pct{font-family:'DM Mono',monospace;font-size:.75rem;color:#64748b;width:34px;text-align:right;flex-shrink:0;}
+.t-cnt{font-size:.7rem;color:#94a3b8;width:52px;text-align:right;flex-shrink:0;}
+.qs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:.85rem;}
+.qs-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:1.1rem .9rem;cursor:pointer;transition:all .2s;}
+.qs-card:hover{border-color:var(--teal);box-shadow:0 3px 12px rgba(13,148,136,.1);}
+.qs-icon{font-size:1.5rem;margin-bottom:.4rem;}
+.qs-title{font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:.15rem;}
+.qs-desc{font-size:.72rem;color:#64748b;}
+
+/* EXAM */
+.exam-scroll{flex:1;overflow-y:auto;padding:1.5rem;}
+.exam-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;}
+.exam-hdr h2{font-family:'Lora',serif;font-size:1.4rem;}
+.btn{padding:.5rem 1.1rem;border-radius:9px;font-size:.82rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:.4rem;}
+.btn-p{background:var(--teal);color:#fff;}
+.btn-p:hover{background:var(--teal-dark);}
+.btn-s{background:#f1f5f9;color:var(--slate);border:1px solid var(--border);}
+.btn-s:hover{background:#e2e8f0;}
+.filter-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.85rem 1.1rem;margin-bottom:1.25rem;display:flex;gap:.85rem;flex-wrap:wrap;align-items:center;}
+.filter-bar label{font-size:.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.08em;}
+.fsel{border:1.5px solid var(--border);border-radius:7px;padding:.38rem .65rem;font-size:.8rem;font-family:'DM Sans',sans-serif;color:var(--ink);outline:none;background:#fff;cursor:pointer;}
+.fsel:focus{border-color:var(--teal);}
+.prog-wrap{margin-bottom:1.25rem;}
+.prog-meta{display:flex;justify-content:space-between;margin-bottom:.35rem;}
+.prog-meta span{font-size:.75rem;color:#64748b;}
+.prog-score{font-weight:600;color:var(--teal-dark);}
+.prog-bar{background:#f1f5f9;border-radius:999px;height:5px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--teal);border-radius:999px;transition:width .4s ease;}
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:.85rem;}
+.q-meta{display:flex;gap:.4rem;margin-bottom:.85rem;flex-wrap:wrap;align-items:center;}
+.q-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;}
+.tag-topic{background:var(--teal-light);color:var(--teal-dark);}
+.tag-fmt{background:#ede9fe;color:#6d28d9;}
+.tag-diff{background:#fef3c7;color:#92400e;}
+.tag-ncjm{background:#fce7f3;color:#9d174d;}
+.q-num{font-size:.68rem;color:#94a3b8;font-family:'DM Mono',monospace;margin-left:auto;}
+.q-vig{background:#f8fafc;border-left:3px solid var(--teal);border-radius:0 7px 7px 0;padding:.8rem .9rem;margin-bottom:1rem;font-size:.83rem;line-height:1.7;color:var(--slate);}
+.q-stem{font-size:.92rem;line-height:1.7;color:var(--ink);margin-bottom:1.1rem;font-weight:500;}
+.opts{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;}
+.opt{display:flex;align-items:flex-start;gap:.65rem;padding:.7rem .9rem;border-radius:9px;border:1.5px solid var(--border);background:#fff;cursor:pointer;text-align:left;font-size:.83rem;font-family:'DM Sans',sans-serif;color:var(--slate);transition:all .15s;line-height:1.5;width:100%;}
+.opt:hover:not(:disabled){border-color:var(--teal);background:var(--mist);}
+.opt.sel{border-color:var(--teal);background:var(--teal-light);}
+.opt.correct{border-color:var(--green);background:#f0fdf4;color:#065f46;}
+.opt.incorrect{border-color:var(--red);background:#fef2f2;color:#991b1b;}
+.opt.show-correct{border-color:var(--green);background:#f0fdf4;color:#065f46;opacity:.75;}
+.opt:disabled{cursor:default;}
+.opt-let{width:22px;height:22px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;flex-shrink:0;font-family:'DM Mono',monospace;}
+.opt.correct .opt-let,.opt.show-correct .opt-let{background:var(--green);color:#fff;}
+.opt.incorrect .opt-let{background:var(--red);color:#fff;}
+.sata-hint{font-size:.72rem;color:#64748b;margin-bottom:.65rem;font-style:italic;}
+.expl{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1.1rem;margin-top:.85rem;display:none;}
+.expl.show{display:block;}
+.expl h4{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#065f46;margin-bottom:.4rem;}
+.expl p{font-size:.83rem;line-height:1.65;color:#065f46;}
+.ncjm-note{font-size:.72rem;font-weight:600;color:var(--teal-dark);margin-top:.5rem;}
+.next-wrap{margin-top:.85rem;}
+.ai-loading{display:flex;align-items:center;gap:.65rem;padding:1.25rem;background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:.85rem;}
+.ai-loading p{font-size:.83rem;color:#64748b;}
+.spinner{width:22px;height:22px;border:2.5px solid #e2e8f0;border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.empty-exam{text-align:center;padding:3.5rem 1.5rem;color:#64748b;}
+.empty-exam .ico{font-size:2.8rem;margin-bottom:.85rem;}
+.empty-exam h3{font-family:'Lora',serif;font-size:1.2rem;color:var(--ink);margin-bottom:.4rem;}
+.empty-exam p{font-size:.85rem;max-width:340px;margin:0 auto 1.25rem;}
+.results-hero{background:var(--ink);color:#fff;border-radius:18px;padding:1.75rem;text-align:center;margin-bottom:1.25rem;}
+.results-hero h2{font-family:'Lora',serif;font-size:1.6rem;margin-bottom:.4rem;}
+.results-pct{font-family:'Lora',serif;font-size:3.5rem;font-weight:600;line-height:1;}
+.results-sub{color:#94a3b8;font-size:.82rem;margin-top:.4rem;}
+
+/* FOOTER */
+.app-footer{background:var(--ink);border-top:1px solid #1e293b;padding:.6rem 1.5rem;text-align:center;font-size:.67rem;color:#475569;line-height:1.5;flex-shrink:0;}
+.app-footer strong{color:#64748b;}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.85rem;color:#fff;z-index:9999;}
+#loader .logo{font-family:'Lora',serif;font-size:1.8rem;display:flex;align-items:center;gap:.4rem;}
+
+.matrix-tbl{width:100%;border-collapse:collapse;margin-bottom:1rem;font-size:.8rem;}
+.matrix-tbl th{background:#f8fafc;padding:.5rem .65rem;text-align:left;font-weight:600;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#64748b;border-bottom:2px solid var(--border);}
+.matrix-tbl td{padding:.55rem .65rem;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.matrix-tbl tr:last-child td{border-bottom:none;}
+.m-radio{width:16px;height:16px;cursor:pointer;accent-color:var(--teal);}
+
+@media(max-width:640px){
+  aside{display:none;}
+  #messages{padding:.85rem;}
+  .bubble{max-width:90%;}
+  .ready-card{flex-direction:column;gap:1rem;}
+  .pricing-cards{flex-direction:column;align-items:center;}
+  .pc.feat{transform:none;}
+  .nav-user{display:none;}
+  .t-name{width:100px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="logo"><span style="color:var(--warn)">✦</span> RNReady</div>
+  <div class="spinner"></div>
+  <p style="color:#64748b;font-size:.82rem;">Loading…</p>
+</div>
+
+<!-- NAV -->
+<nav id="mainNav" style="display:none;">
+  <div class="nav-logo"><span class="dot">✦</span> RNReady</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="goTo('tutor')">💬 AI Tutor</button>
+    <button class="nav-tab" onclick="goTo('dash')">📊 Dashboard</button>
+    <button class="nav-tab" onclick="goTo('exam')">📝 Questions</button>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser"></span>
+    <span class="nav-plan" id="navPlan"></span>
+    <button class="btn-out" onclick="signOut()">Sign out</button>
+  </div>
+</nav>
+
+<!-- ═══ SIGNUP ═══ -->
+<div id="signupScreen" class="screen-full active">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo"><span class="dot">✦</span> RNReady</div>
+      <div class="auth-sub">NGN NCLEX Clinical Tutor · Powered by Claude AI</div>
+      <h2>Create your free account</h2>
+      <div id="su-err" class="auth-err"></div>
+      <div id="su-ok" class="auth-ok"></div>
+      <div class="fg"><label>Full Name</label><input type="text" id="su-name" placeholder="Your name"/></div>
+      <div class="fg"><label>Email</label><input type="email" id="su-email" placeholder="you@email.com"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="su-pw" placeholder="Min. 6 characters"/></div>
+      <button class="btn-auth" id="su-btn" onclick="doSignup()">Create Account</button>
+      <hr class="auth-div">
+      <div class="auth-switch">Already have an account? <a onclick="show('loginScreen')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="loginScreen" class="screen-full" style="display:none;">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo"><span class="dot">✦</span> RNReady</div>
+      <div class="auth-sub">NGN NCLEX Clinical Tutor · Powered by Claude AI</div>
+      <h2>Welcome back, Nurse 👋</h2>
+      <div id="li-err" class="auth-err"></div>
+      <div class="fg"><label>Email</label><input type="email" id="li-email" placeholder="you@email.com"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="li-pw" placeholder="Your password"/></div>
+      <button class="btn-auth" id="li-btn" onclick="doLogin()">Sign In</button>
+      <hr class="auth-div">
+      <div class="auth-switch">No account? <a onclick="show('signupScreen')">Sign up free</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PRICING ═══ -->
+<div id="pricingScreen" class="screen-full" style="display:none;">
+  <div class="pricing-wrap">
+    <div class="pricing-head">
+      <h1>Choose Your Plan</h1>
+      <p>Start free or go Pro for unlimited NCLEX prep</p>
+    </div>
+    <div class="pricing-cards">
+      <div class="pc">
+        <div class="plan-nm">Free</div>
+        <div class="plan-pr">$0</div>
+        <div class="plan-ds">Try it out — no card needed</div>
+        <ul class="plan-fs" style="color:var(--slate)">
+          <li>10 AI tutor messages/day</li>
+          <li>25 practice questions/day</li>
+          <li>Basic progress tracking</li>
+          <li>3 topic areas</li>
+        </ul>
+        <button class="btn-plan btn-outline" onclick="setPlan('free')">Continue Free</button>
+      </div>
+      <div class="pc feat">
+        <div class="pop-tag">MOST POPULAR</div>
+        <div class="plan-nm" style="color:rgba(255,255,255,.7)">Pro</div>
+        <div class="plan-pr">$19.99 <span>/mo</span></div>
+        <div class="plan-ds" style="color:rgba(255,255,255,.75)">Everything to pass the NCLEX</div>
+        <ul class="plan-fs">
+          <li>Unlimited AI tutor sessions</li>
+          <li>Unlimited practice questions</li>
+          <li>All 9 topic areas</li>
+          <li>Full readiness dashboard</li>
+          <li>All NGN formats (Bow-Tie, Matrix…)</li>
+          <li>Cancel anytime</li>
+        </ul>
+        <button class="btn-plan btn-solid" onclick="doCheckout()">Start Pro — $19.99/mo</button>
+      </div>
+    </div>
+    <div class="pricing-foot">Secure payment by Paystack · Accepts cards worldwide<br>
+      <a onclick="setPlan('free')">Skip for now, use free plan</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TUTOR ═══ -->
+<div id="tutorScreen" class="screen" style="display:none;">
+  <div class="tutor-layout">
+    <aside>
+      <h3>Topics</h3>
+      <button class="sb active" onclick="setTopic('Clinical Judgment',this)"><span class="sb-ic">🧠</span> Clinical Judgment</button>
+      <button class="sb" onclick="setTopic('Pharmacology',this)"><span class="sb-ic">💊</span> Pharmacology</button>
+      <button class="sb" onclick="setTopic('Cardiac & Hemodynamics',this)"><span class="sb-ic">❤️</span> Cardiac</button>
+      <button class="sb" onclick="setTopic('Respiratory',this)"><span class="sb-ic">🫁</span> Respiratory</button>
+      <button class="sb" onclick="setTopic('Fluid & Electrolytes',this)"><span class="sb-ic">🧪</span> Fluids & Lytes</button>
+      <button class="sb" onclick="setTopic('Maternity & Newborn',this)"><span class="sb-ic">🍼</span> Maternity</button>
+      <button class="sb" onclick="setTopic('Mental Health Nursing',this)"><span class="sb-ic">🌿</span> Mental Health</button>
+      <button class="sb" onclick="setTopic('Management & Delegation',this)"><span class="sb-ic">📋</span> Management</button>
+      <button class="sb" onclick="setTopic('Lab Values & Diagnostics',this)"><span class="sb-ic">🔬</span> Labs & Diagnostics</button>
+      <h3>Actions</h3>
+      <button class="sb" onclick="newSession()"><span class="sb-ic">＋</span> New Session</button>
+      <button class="sb" onclick="exportChat()"><span class="sb-ic">↓</span> Export Chat</button>
+      <button class="sb" onclick="goTo('exam')" style="color:var(--warn)"><span class="sb-ic">📝</span> Practice Questions</button>
+    </aside>
+    <div class="chat-main">
+      <div class="topic-bar">
+        📚 Active Topic: <span id="topicLabel" class="topic-chip">Clinical Judgment</span>
+        <span style="color:#94a3b8;margin-left:auto;font-size:.7rem;">NGN · Next-Gen NCLEX</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <div id="emptyState">
+          <div class="big-icon">🩺</div>
+          <h2 id="greeting">Hello, Nurse! Let's study. 👋</h2>
+          <p>I'm Professor Reyes, your AI clinical tutor. I use the Socratic method to build your clinical judgment — not just give you answers.</p>
+          <div class="starter-grid">
+            <div class="starter-card" onclick="sendStarter(this.dataset.q)" data-q="I need help with clinical judgment and prioritization."><strong>Clinical Judgment</strong>Help me with prioritization</div>
+            <div class="starter-card" onclick="sendStarter(this.dataset.q)" data-q="Quiz me on a pharmacology scenario."><strong>Pharmacology</strong>Give me a drug safety scenario</div>
+            <div class="starter-card" onclick="sendStarter(this.dataset.q)" data-q="Give me a next-gen NCLEX case study to work through."><strong>Case Study</strong>Walk me through an NGN case</div>
+            <div class="starter-card" onclick="sendStarter(this.dataset.q)" data-q="I keep getting fluid and electrolytes questions wrong. Help me understand them."><strong>Fluids & Lytes</strong>I struggle with this topic</div>
+          </div>
+        </div>
+        <div id="messages" style="display:none;"></div>
+      </div>
+      <div id="limitBanner" class="limit-banner" style="display:none;">
+        <p>🔒 You've used your free messages today. Upgrade for unlimited access!</p>
+        <button class="btn-upgrade" onclick="show('pricingScreen')">Upgrade — $19.99/mo</button>
+      </div>
+      <div class="input-area">
+        <div style="flex:1;display:flex;flex-direction:column;gap:.25rem;">
+          <textarea id="userInput" rows="1" placeholder="Ask a question, request a case study, or say what you're struggling with…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <span class="hint">Enter to send · Shift+Enter for new line</span>
+        </div>
+        <button id="sendBtn" onclick="sendMsg()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <footer class="app-footer"><strong>Disclaimer:</strong> RNReady is an AI-powered educational preparation tool designed solely to assist nursing students with NCLEX preparation. It does not provide medical advice, diagnosis, or clinical treatment guidelines. Use of this platform does not guarantee passing scores on any official examination.</footer>
+</div>
+
+<!-- ═══ DASHBOARD ═══ -->
+<div id="dashScreen" class="screen" style="display:none;">
+  <div class="dash-scroll">
+    <div class="dash-h"><h1>Exam Readiness Dashboard</h1><p>Track your progress across all NGN NCLEX topics</p></div>
+    <div class="ready-card">
+      <div class="ring-wrap">
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle class="ring-bg" cx="65" cy="65" r="52"/>
+          <circle class="ring-fill" id="ringFill" cx="65" cy="65" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7" stroke="var(--teal)"/>
+        </svg>
+        <div class="ring-text"><div class="ring-pct" id="ringPct">0%</div><div class="ring-lbl">Readiness</div></div>
+      </div>
+      <div class="ready-info">
+        <h2 id="readyTitle">Start Practicing</h2>
+        <p id="readyDesc">Answer questions across all 9 topics to build your readiness score. NCLEX requires ≥85% accuracy across all domains.</p>
+        <div id="readyBadge" class="r-badge r-no">⚠ Not Ready Yet</div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num" id="stTotal">0</div><div class="stat-lbl">Questions Answered</div></div>
+      <div class="stat-card"><div class="stat-num" id="stCorrect">0</div><div class="stat-lbl">Correct</div></div>
+      <div class="stat-card"><div class="stat-num" id="stAcc">—</div><div class="stat-lbl">Overall Accuracy</div></div>
+      <div class="stat-card"><div class="stat-num" id="stStreak">0</div><div class="stat-lbl">Streak 🔥</div></div>
+      <div class="stat-card"><div class="stat-num" id="stSessions">0</div><div class="stat-lbl">Sessions Done</div></div>
+      <div class="stat-card"><div class="stat-num" id="stWeak">—</div><div class="stat-lbl">Weakest Topic</div></div>
+    </div>
+    <div class="sec-card"><h3>Performance by Topic</h3><div id="topicBreakdown"></div></div>
+    <div class="sec-card">
+      <h3>Quick Practice</h3>
+      <div class="qs-grid">
+        <div class="qs-card" onclick="quickStart('weak')"><div class="qs-icon">🎯</div><div class="qs-title">Weak Areas</div><div class="qs-desc">Focus on your lowest topics</div></div>
+        <div class="qs-card" onclick="quickStart('random')"><div class="qs-icon">🎲</div><div class="qs-title">Random Mix</div><div class="qs-desc">25 questions across all topics</div></div>
+        <div class="qs-card" onclick="quickStart('exam')"><div class="qs-icon">🏥</div><div class="qs-title">Full Practice Exam</div><div class="qs-desc">85-question NCLEX simulation</div></div>
+      </div>
+    </div>
+  </div>
+  <footer class="app-footer"><strong>Disclaimer:</strong> RNReady is an AI-powered educational preparation tool designed solely to assist nursing students with NCLEX preparation. It does not provide medical advice, diagnosis, or clinical treatment guidelines. Use of this platform does not guarantee passing scores on any official examination.</footer>
+</div>
+
+<!-- ═══ EXAM ═══ -->
+<div id="examScreen" class="screen" style="display:none;">
+  <div class="exam-scroll">
+    <div class="exam-hdr">
+      <h2>Question Bank</h2>
+      <div style="display:flex;gap:.65rem;flex-wrap:wrap;">
+        <button class="btn btn-p" onclick="generateQs()" id="genBtn">✨ Generate Questions</button>
+        <button class="btn btn-s" onclick="resetExam()" id="resetBtn" style="display:none;">↺ New Session</button>
+      </div>
+    </div>
+    <div class="filter-bar" id="filterBar">
+      <label>Topic</label>
+      <select class="fsel" id="fTopic">
+        <option value="all">All Topics</option>
+        <option value="Clinical Judgment">Clinical Judgment</option>
+        <option value="Pharmacology">Pharmacology</option>
+        <option value="Cardiac">Cardiac</option>
+        <option value="Respiratory">Respiratory</option>
+        <option value="Fluids">Fluids & Lytes</option>
+        <option value="Maternity">Maternity</option>
+        <option value="Mental Health">Mental Health</option>
+        <option value="Management">Management</option>
+        <option value="Labs">Labs & Diagnostics</option>
+      </select>
+      <label>Format</label>
+      <select class="fsel" id="fFormat">
+        <option value="all">All Formats</option>
+        <option value="mcq">Multiple Choice</option>
+        <option value="sata">Select All That Apply</option>
+        <option value="matrix">Matrix/Grid</option>
+      </select>
+      <label>Count</label>
+      <select class="fsel" id="fCount">
+        <option value="5">5 Questions</option>
+        <option value="10" selected>10 Questions</option>
+        <option value="25">25 Questions</option>
+        <option value="50">50 Questions</option>
+      </select>
+    </div>
+    <div id="progWrap" style="display:none;">
+      <div class="prog-meta"><span id="progLbl">Question 1 of 10</span><span class="prog-score" id="progScore">Score: 0/0</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+    <div id="qArea">
+      <div class="empty-exam">
+        <div class="ico">📝</div>
+        <h3>Ready to Practice?</h3>
+        <p>Select your filters and click Generate Questions. Fresh AI-generated NGN NCLEX questions every session.</p>
+        <button class="btn btn-p" onclick="generateQs()">Generate Questions</button>
+      </div>
+    </div>
+    <div id="resultsArea" style="display:none;"></div>
+  </div>
+  <footer class="app-footer"><strong>Disclaimer:</strong> RNReady is an AI-powered educational preparation tool designed solely to assist nursing students with NCLEX preparation. It does not provide medical advice, diagnosis, or clinical treatment guidelines. Use of this platform does not guarantee passing scores on any official examination.</footer>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  CONFIG — fill these in
+// ══════════════════════════════════════
+const CFG = {
+  PAYSTACK_KEY: 'YOUR_PAYSTACK_PUBLIC_KEY',
+};
+
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+let user = null;
+let plan = 'free';
+let msgsToday = 0;
+let history = [];
+let topic = 'Clinical Judgment';
+let sending = false;
+let Qs = [], qIdx = 0, qCorrect = 0, qAnswered = 0, qAnswers = [], selOpts = new Set();
+let ST = loadST();
+
+const TOPICS = ['Clinical Judgment','Pharmacology','Cardiac','Respiratory','Fluids','Maternity','Mental Health','Management','Labs'];
+const EMOJIS = {'Clinical Judgment':'🧠','Pharmacology':'💊','Cardiac':'❤️','Respiratory':'🫁','Fluids':'🧪','Maternity':'🍼','Mental Health':'🌿','Management':'📋','Labs':'🔬'};
+
+function loadST(){
+  try{ return JSON.parse(localStorage.getItem('rnr_st'))||{total:0,correct:0,streak:0,sessions:0,topics:{}}; }
+  catch(e){ return {total:0,correct:0,streak:0,sessions:0,topics:{}}; }
+}
+function saveST(){ localStorage.setItem('rnr_st', JSON.stringify(ST)); }
+
+// ══════════════════════════════════════
+//  SCREEN CONTROL
+// ══════════════════════════════════════
+const AUTH = ['signupScreen','loginScreen','pricingScreen'];
+const APP  = ['tutorScreen','dashScreen','examScreen'];
+
+function show(id){
+  [...AUTH,...APP].forEach(s=>{
+    const el=document.getElementById(s);
+    el.style.display='none'; el.classList.remove('active');
+  });
+  const el=document.getElementById(id);
+  el.style.display='flex'; el.classList.add('active');
+}
+
+function goTo(tab){
+  APP.forEach(s=>{
+    const el=document.getElementById(s);
+    el.style.display='none'; el.classList.remove('active');
+  });
+  AUTH.forEach(s=>document.getElementById(s).style.display='none');
+  const map={tutor:'tutorScreen',dash:'dashScreen',exam:'examScreen'};
+  const el=document.getElementById(map[tab]);
+  el.style.display='flex'; el.classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{
+    t.classList.toggle('active',['tutor','dash','exam'][i]===tab);
+  });
+  if(tab==='dash') renderDash();
+}
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+window.addEventListener('load', ()=>{
+  setTimeout(()=>{
+    document.getElementById('loader').style.display='none';
+    const saved = localStorage.getItem('rnr_user');
+    if(saved){
+      user = JSON.parse(saved);
+      plan = localStorage.getItem('rnr_plan_'+user.id)||'free';
+      msgsToday = parseInt(localStorage.getItem('rnr_msgs_'+user.id+'_'+new Date().toDateString())||'0');
+      enterApp();
+    } else {
+      show('signupScreen');
+    }
+  }, 800);
+});
+
+function enterApp(){
+  document.getElementById('mainNav').style.display='flex';
+  const name = user.name || user.email.split('@')[0];
+  document.getElementById('navUser').textContent = name;
+  document.getElementById('greeting').textContent = 'Hello, ' + name + '! Let\'s study. 👋';
+  const planEl = document.getElementById('navPlan');
+  if(plan==='pro'){ planEl.textContent='⭐ Pro'; planEl.className='nav-plan plan-pro'; }
+  else { planEl.textContent='Free'; planEl.className='nav-plan plan-free'; }
+  const planSet = localStorage.getItem('rnr_plan_'+user.id);
+  if(!planSet){ show('pricingScreen'); }
+  else { goTo('tutor'); }
+}
+
+// ══════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════
+function doSignup(){
+  const name=document.getElementById('su-name').value.trim();
+  const email=document.getElementById('su-email').value.trim();
+  const pw=document.getElementById('su-pw').value;
+  const err=document.getElementById('su-err');
+  const ok=document.getElementById('su-ok');
+  err.style.display='none'; ok.style.display='none';
+  if(!name){err.textContent='Please enter your name.';err.style.display='block';return;}
+  if(!email||!pw){err.textContent='Please fill in all fields.';err.style.display='block';return;}
+  if(pw.length<6){err.textContent='Password must be at least 6 characters.';err.style.display='block';return;}
+  const id='rnr_'+btoa(email).replace(/[^a-z0-9]/gi,'').slice(0,16);
+  if(localStorage.getItem('rnr_pw_'+id)){
+    err.textContent='Account already exists. Please sign in.';err.style.display='block';return;
+  }
+  localStorage.setItem('rnr_pw_'+id, btoa(pw));
+  user={id,name,email};
+  localStorage.setItem('rnr_user', JSON.stringify(user));
+  enterApp();
+}
+
+function doLogin(){
+  const email=document.getElementById('li-email').value.trim();
+  const pw=document.getElementById('li-pw').value;
+  const err=document.getElementById('li-err');
+  err.style.display='none';
+  if(!email||!pw){err.textContent='Please fill in all fields.';err.style.display='block';return;}
+  const id='rnr_'+btoa(email).replace(/[^a-z0-9]/gi,'').slice(0,16);
+  const stored=localStorage.getItem('rnr_pw_'+id);
+  if(!stored||stored!==btoa(pw)){
+    err.textContent='Incorrect email or password.';err.style.display='block';return;
+  }
+  const savedUser=localStorage.getItem('rnr_user');
+  user=savedUser?JSON.parse(savedUser):{id,email};
+  localStorage.setItem('rnr_user',JSON.stringify(user));
+  plan=localStorage.getItem('rnr_plan_'+id)||'free';
+  msgsToday=parseInt(localStorage.getItem('rnr_msgs_'+id+'_'+new Date().toDateString())||'0');
+  enterApp();
+}
+
+function signOut(){
+  localStorage.removeItem('rnr_user');
+  user=null; history=[];
+  document.getElementById('mainNav').style.display='none';
+  show('loginScreen');
+}
+
+function setPlan(p){
+  plan=p;
+  localStorage.setItem('rnr_plan_'+user.id, p);
+  goTo('tutor');
+}
+
+function doCheckout(){
+  if(!CFG.PAYSTACK_KEY||CFG.PAYSTACK_KEY==='YOUR_PAYSTACK_PUBLIC_KEY'){
+    alert('Paystack key not set up yet. Using free plan for now.');
+    setPlan('free'); return;
+  }
+  // Lazy-load Paystack only when user clicks to pay
+  if(typeof PaystackPop === 'undefined'){
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.onload = function(){ openPaystack(); };
+    script.onerror = function(){ alert('Could not load payment processor. Please check your connection.'); };
+    document.body.appendChild(script);
+  } else {
+    openPaystack();
+  }
+}
+
+function openPaystack(){
+  const handler=PaystackPop.setup({
+    key:CFG.PAYSTACK_KEY,
+    email:user.email,
+    amount:1999*100,
+    currency:'USD',
+    ref:'rnr_'+Date.now(),
+    label:'RNReady Pro Monthly',
+    callback:function(r){ setPlan('pro'); toast('🎉 Payment successful! Welcome to Pro.'); },
+    onClose:function(){ toast('Payment cancelled. You can upgrade anytime.'); }
+  });
+  handler.openIframe();
+}
+
+function toast(msg){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:1.5rem;right:1.5rem;background:var(--ink);color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:.85rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);';
+  t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>t.remove(),4000);
+}
+
+// ══════════════════════════════════════
+//  TUTOR
+// ══════════════════════════════════════
+const SYS=`You are Professor Reyes, a warm, encouraging nursing professor with 20 years of ICU and academic experience. You specialize in NGN NCLEX prep using the Socratic method — guide students to discover answers through questions, never just give the answer.
+
+PERSONALITY: Warm, patient, invested. Use phrases like "Great thinking — now let's push further…", "What's your clinical instinct telling you?" When students are wrong, say "Interesting — walk me through your reasoning" and guide self-correction.
+
+NCJM FRAMEWORK — always label the step:
+[Recognize Cues] [Analyze Cues] [Prioritize Hypotheses] [Generate Solutions] [Take Actions] [Evaluate Outcomes]
+
+RULES:
+- Never lecture more than 3-4 sentences without asking a question
+- Always label NCJM skill in brackets using **bold**
+- For pharmacology: always cover mechanism, indication, nursing considerations, patient teaching
+- End every response with a question OR invitation to continue
+- Use **bold** for key clinical terms. Keep responses scannable.
+- Never give a complete answer without first asking the student to attempt it
+
+CURRENT TOPIC: {TOPIC}`;
+
+function setTopic(t,btn){
+  topic=t;
+  document.getElementById('topicLabel').textContent=t;
+  document.querySelectorAll('.sb').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+
+function showMsgs(){
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('messages').style.display='flex';
+}
+
+function fmt(text){
+  return text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/\[([^\]]+)\]/g,'<span class="nclex-tag">$1</span>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n- /g,'<br>• ')
+    .replace(/\n(\d+)\. /g,'<br>$1. ');
+}
+
+function addMsg(role,text){
+  const msgs=document.getElementById('messages');
+  const row=document.createElement('div'); row.className='msg-row '+role;
+  const av=document.createElement('div'); av.className='av '+(role==='assistant'?'ai':'user');
+  av.textContent=role==='assistant'?'P':'RN';
+  const bub=document.createElement('div'); bub.className='bubble '+(role==='assistant'?'ai':'user');
+  bub.innerHTML=fmt(text);
+  row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function showThinking(){
+  const msgs=document.getElementById('messages');
+  const row=document.createElement('div'); row.className='msg-row assistant'; row.id='thinking';
+  const av=document.createElement('div'); av.className='av ai'; av.textContent='P';
+  const bub=document.createElement('div'); bub.className='bubble ai dots';
+  bub.innerHTML='<span></span><span></span><span></span>';
+  row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+function removeThinking(){const el=document.getElementById('thinking');if(el)el.remove();}
+
+async function sendMsg(){
+  const input=document.getElementById('userInput');
+  const text=input.value.trim();
+  if(!text||sending) return;
+  if(plan==='free'&&msgsToday>=10){
+    document.getElementById('limitBanner').style.display='flex'; return;
+  }
+  input.value=''; input.style.height='auto';
+  sending=true; document.getElementById('sendBtn').disabled=true;
+  showMsgs();
+  addMsg('user',text);
+  history.push({role:'user',content:text});
+  showThinking();
+  try{
+    const res=await fetch('/.netlify/functions/claude',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        max_tokens:1000,
+        system:SYS.replace('{TOPIC}',topic),
+        messages:history
+      })
+    });
+    const data=await res.json();
+    removeThinking();
+    if(data.content&&data.content[0]){
+      const reply=data.content[0].text;
+      addMsg('assistant',reply);
+      history.push({role:'assistant',content:reply});
+      if(plan==='free'){
+        msgsToday++;
+        localStorage.setItem('rnr_msgs_'+user.id+'_'+new Date().toDateString(),msgsToday);
+      }
+    } else {
+      addMsg('assistant','⚠️ '+(data.error?.message||'Something went wrong. Please try again.'));
+    }
+  }catch(err){
+    removeThinking();
+    addMsg('assistant','⚠️ Could not connect to the AI. Please check your connection.');
+    console.error(err);
+  }
+  sending=false; document.getElementById('sendBtn').disabled=false;
+  document.getElementById('userInput').focus();
+}
+
+function sendStarter(q){document.getElementById('userInput').value=q;sendMsg();}
+
+function newSession(){
+  history=[];
+  document.getElementById('messages').innerHTML='';
+  document.getElementById('messages').style.display='none';
+  document.getElementById('emptyState').style.display='flex';
+  document.getElementById('limitBanner').style.display='none';
+}
+
+function exportChat(){
+  if(!history.length){alert('No conversation to export yet!');return;}
+  const lines=history.map(m=>'['+m.role.toUpperCase()+']\n'+m.content+'\n').join('\n---\n\n');
+  const blob=new Blob(['RNReady Session\nTopic: '+topic+'\n\n'+lines],{type:'text/plain'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='RNReady_'+topic.replace(/\s/g,'_')+'.txt'; a.click();
+}
+
+// ══════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════
+function renderDash(){
+  const {total,correct,streak,sessions,topics}=ST;
+  const pct=total>0?Math.round((correct/total)*100):0;
+  const covered=Object.keys(topics).length;
+  const ready=Math.min(Math.round(pct*.8+(covered/TOPICS.length)*20),100);
+  const circ=326.7;
+  setTimeout(()=>{ document.getElementById('ringFill').style.strokeDashoffset=circ-(ready/100)*circ; },100);
+  document.getElementById('ringFill').style.stroke=ready>=85?'#10b981':ready>=70?'#f59e0b':'#ef4444';
+  document.getElementById('ringPct').textContent=ready+'%';
+  let title,desc,bc,bt;
+  if(total===0){title='Start Practicing';bc='r-no';bt='⚠ Not Ready Yet';desc='Answer questions across all 9 topics to build your score. NCLEX requires 85%+ accuracy.';}
+  else if(ready>=85){title='Exam Ready! 🎉';bc='r-yes';bt='✓ Ready for NCLEX';desc='Your accuracy and topic coverage meet NCLEX standards. Book your exam!';}
+  else if(ready>=70){title='Almost There 💪';bc='r-mid';bt='⟳ Getting Close';desc='At '+pct+'% accuracy. Need 85%+ across all topics. Focus on weak areas!';}
+  else{title='Keep Practicing 📚';bc='r-no';bt='⚠ Not Ready Yet';desc='At '+pct+'% accuracy. Need 85%+ with all 9 topics covered. Keep going!';}
+  document.getElementById('readyTitle').textContent=title;
+  document.getElementById('readyDesc').textContent=desc;
+  const b=document.getElementById('readyBadge'); b.className='r-badge '+bc; b.textContent=bt;
+  document.getElementById('stTotal').textContent=total;
+  document.getElementById('stCorrect').textContent=correct;
+  document.getElementById('stAcc').textContent=total>0?pct+'%':'—';
+  document.getElementById('stStreak').textContent=streak;
+  document.getElementById('stSessions').textContent=sessions;
+  let wt='—',wp=101;
+  TOPICS.forEach(t=>{const ts=topics[t];if(ts&&ts.answered>=3){const p=Math.round((ts.correct/ts.answered)*100);if(p<wp){wp=p;wt=t.split(' ')[0];}}});
+  document.getElementById('stWeak').textContent=wt;
+  document.getElementById('topicBreakdown').innerHTML=TOPICS.map(t=>{
+    const ts=topics[t]||{answered:0,correct:0};
+    const p=ts.answered>0?Math.round((ts.correct/ts.answered)*100):0;
+    const fc=p>=80?'':p>=60?'mid':'weak';
+    return '<div class="t-row"><div class="t-name">'+EMOJIS[t]+' '+t+'</div><div class="bar-wrap"><div class="bar-fill '+fc+'" style="width:'+(ts.answered>0?p:0)+'%"></div></div><div class="t-pct">'+(ts.answered>0?p+'%':'—')+'</div><div class="t-cnt">'+ts.answered+" q's</div></div>";
+  }).join('');
+}
+
+function quickStart(mode){
+  goTo('exam');
+  const ct=document.getElementById('fCount');
+  const ft=document.getElementById('fTopic');
+  if(mode==='weak'){
+    let wt='all',wp=101;
+    TOPICS.forEach(t=>{const ts=ST.topics[t];if(ts&&ts.answered>=2){const p=Math.round((ts.correct/ts.answered)*100);if(p<wp){wp=p;wt=t;}}});
+    ft.value=wt; ct.value='10';
+  } else if(mode==='random'){ ft.value='all'; ct.value='25'; }
+  else if(mode==='exam'){ ft.value='all'; ct.value='50'; }
+  generateQs();
+}
+
+// ══════════════════════════════════════
+//  QUESTION GENERATOR
+// ══════════════════════════════════════
+async function generateQs(){
+  const topic=document.getElementById('fTopic').value;
+  const format=document.getElementById('fFormat').value;
+  const count=parseInt(document.getElementById('fCount').value);
+  document.getElementById('filterBar').style.display='none';
+  document.getElementById('genBtn').style.display='none';
+  document.getElementById('resetBtn').style.display='inline-flex';
+  document.getElementById('progWrap').style.display='block';
+  document.getElementById('resultsArea').style.display='none';
+  document.getElementById('qArea').style.display='block';
+  Qs=[]; qIdx=0; qCorrect=0; qAnswered=0; qAnswers=[]; selOpts=new Set();
+
+  const topicStr=topic==='all'?'across ALL 9 topics (Clinical Judgment, Pharmacology, Cardiac, Respiratory, Fluids & Electrolytes, Maternity, Mental Health, Management & Delegation, Labs & Diagnostics)':'focused on '+topic;
+  const fmtStr=format==='all'?'Use a mix of MCQ (multiple choice), SATA (select all that apply), and Matrix/Grid formats':'Use '+format+' format only';
+
+  const BATCH=5;
+  const batches=Math.ceil(count/BATCH);
+
+  function makePrompt(batchSize,startId){
+    return 'Generate exactly '+batchSize+' NGN NCLEX nursing questions '+topicStr+'. '+fmtStr+'.\n\nReturn ONLY a raw JSON array. No markdown. No explanation. Start with [ and end with ].\n\nEach question object must have exactly these fields:\n{\n  "id": "q'+startId+'",\n  "topic": "Clinical Judgment",\n  "format": "mcq",\n  "difficulty": "intermediate",\n  "ncjm": "Recognize Cues",\n  "vignette": "A 62-year-old male with HTN and DM2 is admitted for chest pain. BP 158/94, HR 108 bpm, RR 22/min, SpO2 94% on room air, Temp 37.2C. Troponin pending.",\n  "stem": "Which assessment finding requires the nurse\'s IMMEDIATE attention?",\n  "options": [\n    {"letter":"A","text":"Blood pressure 158/94 mmHg"},\n    {"letter":"B","text":"Heart rate 108 bpm"},\n    {"letter":"C","text":"SpO2 94% on room air"},\n    {"letter":"D","text":"Temperature 37.2 degrees C"}\n  ],\n  "correct": ["C"],\n  "explanation": "SpO2 of 94% indicates hypoxemia which directly threatens myocardial oxygenation in a patient with chest pain — the nurse must apply supplemental oxygen immediately and notify the provider. HR 108 is tachycardia but secondary to hypoxemia. BP 158/94 needs monitoring but is not immediately life-threatening. Temperature is normal.",\n  "rationale_wrong": "A: BP 158/94 is elevated but not immediately dangerous in isolation. B: Tachycardia is concerning but is likely a response to hypoxemia — treat the cause. D: Temperature 37.2C is within normal range.",\n  "ncjm_reasoning": "This tests Recognize Cues — the nurse must identify SpO2 94% as the most urgent abnormal finding because oxygenation takes priority in chest pain assessment."\n}\n\nCRITICAL RULES:\n- explanation: 2-3 sentences explaining WHY the correct answer is right with clinical reasoning\n- rationale_wrong: explain why EACH wrong option is incorrect\n- ncjm_reasoning: name the exact NCJM step and explain why this question tests it\n- vignette: always include age, setting, chief complaint, BP, HR, RR, SpO2, Temp, relevant labs or history\n- options: ALL options must be clinically plausible — no obviously wrong distractors\n- SATA questions: correct array has 2-4 letters, stem must say "Select all that apply."\n- Matrix questions: add "matrix_rows": [{"row":"Finding","colA":"Expected","colB":"Unexpected"},...] and correct:["0:A","1:B"]\n- Return EXACTLY '+batchSize+' questions with IDs starting at q'+startId;
+  }
+
+  for(let b=0;b<batches;b++){
+    const batchSize=Math.min(BATCH,count-(b*BATCH));
+    const startId=b*BATCH+1;
+    document.getElementById('qArea').innerHTML='<div class="ai-loading"><div class="spinner"></div><p>Generating questions '+(startId)+' to '+(startId+batchSize-1)+' of '+count+'… please wait</p></div>'+(Qs.length>0?'<p style="text-align:center;font-size:.78rem;color:var(--teal-dark);margin-top:.5rem;">✓ '+Qs.length+' questions ready</p>':'');
+    try{
+      const res=await fetch('/.netlify/functions/claude',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({max_tokens:6000,messages:[{role:'user',content:makePrompt(batchSize,startId)}]})
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      if(!data.content||!data.content[0]) throw new Error('Empty response from API');
+      let raw=data.content[0].text.trim();
+      raw=raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+      const s=raw.indexOf('['); const e=raw.lastIndexOf(']');
+      if(s===-1||e===-1) throw new Error('No JSON array in response');
+      const batch=JSON.parse(raw.slice(s,e+1));
+      if(!Array.isArray(batch)||batch.length===0) throw new Error('Empty array');
+      Qs=Qs.concat(batch);
+    }catch(err){
+      console.error('Batch '+b+' error:',err);
+      if(Qs.length>0) break;
+      document.getElementById('qArea').innerHTML='<div class="empty-exam"><div class="ico">⚠️</div><h3>Could not generate questions</h3><p>Error: '+err.message+'</p><p style="margin-top:.5rem;font-size:.8rem;">Make sure the Netlify function is deployed and your API key is set in Netlify environment variables.</p><button class="btn btn-p" style="margin-top:1rem;" onclick="generateQs()">Try Again</button></div>';
+      return;
+    }
+  }
+  if(Qs.length===0){
+    document.getElementById('qArea').innerHTML='<div class="empty-exam"><div class="ico">⚠️</div><h3>No questions generated</h3><p>Please try again.</p><button class="btn btn-p" onclick="generateQs()">Retry</button></div>';
+    return;
+  }
+  renderQ(0);
+}
+
+function fmtLabel(f){return{mcq:'Multiple Choice',sata:'Select All That Apply',matrix:'Matrix/Grid'}[f]||f.toUpperCase();}
+
+function renderQ(idx){
+  if(idx>=Qs.length){showResults();return;}
+  qIdx=idx; selOpts=new Set();
+  const q=Qs[idx];
+  const pct=Math.round((idx/Qs.length)*100);
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progLbl').textContent='Question '+(idx+1)+' of '+Qs.length;
+  document.getElementById('progScore').textContent='Score: '+qCorrect+'/'+qAnswered;
+  const isSATA=q.format==='sata'||(q.correct&&q.correct.length>1);
+  let body='';
+  if(q.format==='matrix'&&q.matrix_rows){
+    body='<table class="matrix-tbl"><thead><tr><th>Finding</th><th>'+(q.matrix_rows[0]?.colA||'Expected')+'</th><th>'+(q.matrix_rows[0]?.colB||'Unexpected')+'</th></tr></thead><tbody>'+
+      q.matrix_rows.map((r,i)=>'<tr><td>'+r.row+'</td><td><input type="radio" class="m-radio" name="mr'+i+'" value="'+i+':A" onchange="chkMatrix()"></td><td><input type="radio" class="m-radio" name="mr'+i+'" value="'+i+':B" onchange="chkMatrix()"></td></tr>').join('')+
+      '</tbody></table><button class="btn btn-p" id="subBtn" onclick="submitMatrix()" style="display:none;">Submit Answer</button>';
+  } else {
+    body=(isSATA?'<p class="sata-hint">Select all that apply — choose every correct answer</p>':'')+
+      '<div class="opts" id="optsList">'+
+      (q.options||[]).map(o=>'<button class="opt" data-l="'+o.letter+'" onclick="pickOpt(\''+o.letter+'\','+isSATA+')"><span class="opt-let">'+o.letter+'</span><span>'+o.text+'</span></button>').join('')+
+      '</div>'+
+      (isSATA?'<button class="btn btn-p" id="subBtn" onclick="submitAnswer()" style="display:none;">Submit Answer</button>':'');
+  }
+  document.getElementById('qArea').innerHTML=
+    '<div class="q-card">'+
+      '<div class="q-meta">'+
+        '<span class="q-tag tag-topic">'+(q.topic||'General')+'</span>'+
+        '<span class="q-tag tag-fmt">'+fmtLabel(q.format)+'</span>'+
+        '<span class="q-tag tag-diff">'+(q.difficulty||'intermediate')+'</span>'+
+        '<span class="q-tag tag-ncjm">'+(q.ncjm||'Clinical Judgment')+'</span>'+
+        '<span class="q-num">Q'+(idx+1)+'</span>'+
+      '</div>'+
+      (q.vignette?'<div class="q-vig">'+q.vignette+'</div>':'')+
+      '<div class="q-stem">'+q.stem+'</div>'+
+      body+
+      '<div class="expl" id="expl">'+
+        '<h4>✅ Explanation</h4>'+
+        '<p><strong>Why correct:</strong> '+q.explanation+'</p>'+
+        (q.rationale_wrong?'<p style="margin-top:.5rem;"><strong>Why others are wrong:</strong> '+q.rationale_wrong+'</p>':'')+
+        '<div class="ncjm-note">📚 NCJM — '+(q.ncjm||'')+': '+(q.ncjm_reasoning||'')+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="next-wrap" id="nextWrap" style="display:none;">'+
+      '<button class="btn btn-p" onclick="nextQ()">'+(idx+1<Qs.length?'Next Question →':'See Results 🎉')+'</button>'+
+    '</div>';
+}
+
+function pickOpt(letter,multi){
+  if(!multi){ selOpts.clear(); document.querySelectorAll('.opt').forEach(b=>b.classList.remove('sel')); }
+  const btn=document.querySelector('.opt[data-l="'+letter+'"]');
+  if(selOpts.has(letter)){ selOpts.delete(letter); btn.classList.remove('sel'); }
+  else { selOpts.add(letter); btn.classList.add('sel'); }
+  const sb=document.getElementById('subBtn'); if(sb) sb.style.display=selOpts.size>0?'inline-flex':'none';
+  if(!multi&&selOpts.size===1) setTimeout(()=>submitAnswer(),350);
+}
+
+function submitAnswer(){
+  const q=Qs[qIdx];
+  const correct=new Set(q.correct);
+  let ok;
+  if(q.correct.length>1){ ok=[...correct].every(c=>selOpts.has(c))&&[...selOpts].every(s=>correct.has(s)); }
+  else { ok=selOpts.has(q.correct[0]); }
+  document.querySelectorAll('.opt').forEach(btn=>{
+    btn.disabled=true;
+    const l=btn.dataset.l;
+    if(correct.has(l)) btn.classList.add('correct');
+    else if(selOpts.has(l)&&!correct.has(l)) btn.classList.add('incorrect');
+  });
+  showExpl(ok,q.topic);
+}
+
+function chkMatrix(){
+  const q=Qs[qIdx];
+  const all=q.matrix_rows.every((_,i)=>document.querySelector('input[name="mr'+i+'"]:checked'));
+  const sb=document.getElementById('subBtn'); if(sb) sb.style.display=all?'inline-flex':'none';
+}
+function submitMatrix(){
+  const q=Qs[qIdx]; let ok=true;
+  q.matrix_rows.forEach((_,i)=>{
+    const val=document.querySelector('input[name="mr'+i+'"]:checked')?.value;
+    if(val!==q.correct[i]) ok=false;
+    document.querySelectorAll('input[name="mr'+i+'"]').forEach(r=>r.disabled=true);
+  });
+  showExpl(ok,q.topic);
+}
+
+function showExpl(ok,t){
+  const expl=document.getElementById('expl'); if(expl) expl.classList.add('show');
+  const sb=document.getElementById('subBtn'); if(sb) sb.style.display='none';
+  document.getElementById('nextWrap').style.display='block';
+  qAnswered++; if(ok) qCorrect++;
+  ST.total++; if(ok){ST.correct++;ST.streak++;}else{ST.streak=0;}
+  if(!ST.topics[t]) ST.topics[t]={answered:0,correct:0};
+  ST.topics[t].answered++; if(ok) ST.topics[t].correct++;
+  qAnswers.push({topic:t,correct:ok}); saveST(); selOpts=new Set();
+  document.getElementById('progScore').textContent='Score: '+qCorrect+'/'+qAnswered;
+}
+
+function nextQ(){ selOpts=new Set(); renderQ(qIdx+1); }
+
+function showResults(){
+  ST.sessions++; saveST();
+  const pct=Math.round((qCorrect/qAnswered)*100);
+  const icon=pct>=85?'🏆':pct>=75?'✅':'📚';
+  const st={};
+  qAnswers.forEach(a=>{
+    if(!st[a.topic]) st[a.topic]={answered:0,correct:0};
+    st[a.topic].answered++; if(a.correct) st[a.topic].correct++;
+  });
+  document.getElementById('progWrap').style.display='none';
+  document.getElementById('qArea').style.display='none';
+  document.getElementById('resultsArea').style.display='block';
+  document.getElementById('resultsArea').innerHTML=
+    '<div class="results-hero">'+
+      '<div style="font-size:2.2rem;margin-bottom:.4rem;">'+icon+'</div>'+
+      '<h2>Session Complete!</h2>'+
+      '<div class="results-pct">'+pct+'%</div>'+
+      '<div class="results-sub">'+qCorrect+' correct out of '+qAnswered+' questions</div>'+
+      '<div style="margin-top:.85rem;"><span style="display:inline-block;padding:.35rem 1rem;border-radius:999px;font-size:.78rem;font-weight:700;background:'+(pct>=85?'rgba(16,185,129,.2)':pct>=75?'rgba(245,158,11,.2)':'rgba(239,68,68,.2)')+';color:'+(pct>=85?'#6ee7b7':pct>=75?'#fcd34d':'#fca5a5')+';"> '+(pct>=85?'🎯 Excellent — Above NCLEX Standard':pct>=75?'✓ Passing — Keep Practicing':'⚠ Below Passing — Review Needed')+'</span></div>'+
+    '</div>'+
+    '<div class="sec-card"><h3>This Session by Topic</h3>'+
+    Object.entries(st).map(([t,ts])=>{
+      const p=Math.round((ts.correct/ts.answered)*100);
+      const fc=p>=80?'':p>=60?'mid':'weak';
+      return '<div class="t-row"><div class="t-name">'+(EMOJIS[t]||'📋')+' '+t+'</div><div class="bar-wrap"><div class="bar-fill '+fc+'" style="width:'+p+'%"></div></div><div class="t-pct">'+p+'%</div><div class="t-cnt">'+ts.answered+" q's</div></div>";
+    }).join('')+'</div>'+
+    '<div style="display:flex;gap:.75rem;flex-wrap:wrap;">'+
+      '<button cla
