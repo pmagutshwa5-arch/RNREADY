@@ -235,9 +235,7 @@ aside h3{font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:upp
 .app-footer{background:var(--ink);border-top:1px solid #1e293b;padding:.6rem 1.5rem;text-align:center;font-size:.67rem;color:#475569;line-height:1.5;flex-shrink:0;}
 .app-footer strong{color:#64748b;}
 
-/* LOADER */
-#loader{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.85rem;color:#fff;z-index:9999;}
-#loader .logo{font-family:'Lora',serif;font-size:1.8rem;display:flex;align-items:center;gap:.4rem;}
+
 
 .matrix-tbl{width:100%;border-collapse:collapse;margin-bottom:1rem;font-size:.8rem;}
 .matrix-tbl th{background:#f8fafc;padding:.5rem .65rem;text-align:left;font-weight:600;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#64748b;border-bottom:2px solid var(--border);}
@@ -259,12 +257,7 @@ aside h3{font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:upp
 </head>
 <body>
 
-<!-- LOADER -->
-<div id="loader">
-  <div class="logo"><span style="color:var(--warn)">✦</span> RNReady</div>
-  <div class="spinner"></div>
-  <p style="color:#64748b;font-size:.82rem;">Loading…</p>
-</div>
+<!-- LOADER REMOVED -->
 
 <!-- NAV -->
 <nav id="mainNav" style="display:none;">
@@ -573,8 +566,6 @@ function goTo(tab){
 //  INIT
 // ══════════════════════════════════════
 window.addEventListener('DOMContentLoaded', ()=>{
-  // Hide loader immediately — don't wait for external scripts
-  document.getElementById('loader').style.display='none';
   const saved = localStorage.getItem('rnr_user');
   if(saved){
     try {
