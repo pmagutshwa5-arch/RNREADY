@@ -4,7 +4,6 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>RNReady — NCLEX Clinical Tutor</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -573,19 +572,22 @@ function goTo(tab){
 // ══════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════
-window.addEventListener('load', ()=>{
-  setTimeout(()=>{
-    document.getElementById('loader').style.display='none';
-    const saved = localStorage.getItem('rnr_user');
-    if(saved){
+window.addEventListener('DOMContentLoaded', ()=>{
+  // Hide loader immediately — don't wait for external scripts
+  document.getElementById('loader').style.display='none';
+  const saved = localStorage.getItem('rnr_user');
+  if(saved){
+    try {
       user = JSON.parse(saved);
       plan = localStorage.getItem('rnr_plan_'+user.id)||'free';
       msgsToday = parseInt(localStorage.getItem('rnr_msgs_'+user.id+'_'+new Date().toDateString())||'0');
       enterApp();
-    } else {
+    } catch(e) {
       show('signupScreen');
     }
-  }, 800);
+  } else {
+    show('signupScreen');
+  }
 });
 
 function enterApp(){
